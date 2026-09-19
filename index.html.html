@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGLISH QUEST - Gamified High School English Quiz</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        accent: {
+                            purple: '#a855f7',
+                            pink: '#ec4899',
+                            emerald: '#10b981',
+                            amber: '#f59e0b',
+                            rose: '#f43f5e'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        game: ['Fredoka', 'Comfortaa', 'Segoe UI', 'sans-serif']
+                    },
+                    animation: {
+                        'bounce-short': 'bounce 0.6s ease-in-out 1',
+                        'pulse-glow': 'pulseGlow 2s infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                        'pop': 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 15px rgba(14, 165, 233, 0.4)' },
+                            '50%': { boxShadow: '0 0 30px rgba(168, 85, 247, 0.8)' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' }
+                        },
+                        popIn: {
+                            '0%': { transform: 'scale(0.8)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, #0f172a, #020617);
+            color: #f8fafc;
+            min-height: 100vh;
+            user-select: none;
+        }
+
+        .font-game {
+            font-family: 'Fredoka', cursive, sans-serif;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .glass-button {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 100%);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-button:hover {
+            transform: translateY(-2px);
+            border-color: rgba(56, 189, 248, 0.5);
+            box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.3);
+        }
+
+        .glass-button:active {
+            transform: translateY(1px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* Shake Animation for incorrect answers */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between overflow-x-hidden text-slate-100">
+
+    <!-- Canvas for Confetti Effects -->
+    <canvas id="confettiCanvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
+
+    <!-- Global Sound Control Header -->
+    <header class="w-full max-w-6xl mx-auto p-4 flex justify-between items-center z-10">
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="app.showScreen('menu')">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/30">
+                <i class="fa-solid font-game text-xl text-white">E</i>
+            </div>
+            <span class="font-game text-2xl font-bold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-indigo-300 to-purple-400">
+                ENGLISH QUEST
+            </span>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <button id="soundToggleBtn" onclick="app.toggleSound()" class="glass-button p-2.5 rounded-xl text-slate-300 hover:text-white transition flex items-center space-x-2 text-sm font-medium">
+                <i id="soundIcon" class="fa-solid fa-volume-high text-sky-400"></i>
+                <span id="soundLabel" class="hidden sm:inline">Audio: On</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-grow flex items-center justify-center p-3 sm:p-6 z-10 my-auto">
+        
+        <!-- ================= MAIN MENU SCREEN ================= -->
+        <section id="menuScreen" class="w-full max-w-3xl glass-card rounded-3xl p-6 sm:p-10 animate-pop">
+            
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-300 text-xs sm:text-sm font-semibold mb-4">
+                    <i class="fa-solid fa-gamepad mr-2 text-sky-400"></i> GAMIFIED LEARNING PLATFORM
+                </div>
+                <h1 class="font-game text-4xl sm:text-6xl font-bold tracking-tight text-white mb-3">
+                    ENGLISH <span class="bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-purple-400 to-pink-500">QUEST</span>
+                </h1>
+                <p class="text-slate-300 text-sm sm:text-base max-w-lg mx-auto">
+                    Master your High School English skills through interactive challenges, earn points, and build winning combos!
+                </p>
+            </div>
+
+            <div class="space-y-6 max-w-xl mx-auto">
+                <!-- Student Name Input -->
+                <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-700/60 shadow-inner">
+                    <label for="studentNameInput" class="block text-xs uppercase tracking-wider font-bold text-sky-400 mb-2">
+                        <i class="fa-solid fa-user-graduate mr-1.5"></i> Student Full Name
+                    </label>
+                    <input type="text" id="studentNameInput" placeholder="Enter your full name..." 
+                           class="w-full bg-slate-800/90 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/30 transition text-base">
+                    <p id="nameError" class="text-rose-400 text-xs mt-1.5 hidden flex items-center">
+                        <i class="fa-solid fa-circle-exclamation mr-1"></i> Please enter your name before selecting an exam.
+                    </p>
+                </div>
+
+                <!-- Avatar Selection -->
+                <div>
+                    <label class="block text-xs uppercase tracking-wider font-bold text-slate-400 mb-2.5">
+                        Choose Your Hero Avatar
+                    </label>
+                    <div class="grid grid-cols-5 gap-2.5" id="avatarSelector">
+                        <!-- Dynamic Avatars -->
+                    </div>
+                </div>
+
+                <!-- Semester Exam Selector -->
+                <div>
+                    <label class="block text-xs uppercase tracking-wider font-bold text-slate-400 mb-3">
+                        Select Your Semester Challenge
+                    </label>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                        <!-- 1st Semester -->
+                        <button onclick="app.selectSemester(1)" class="group relative overflow-hidden glass-button p-4 rounded-2xl text-left border border-sky-500/20 hover:border-sky-400 transition flex flex-col justify-between h-36">
+                            <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-sky-500/10 rounded-full blur-xl group-hover:bg-sky-500/20 transition"></div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/30">LEVEL 1</span>
+                                <i class="fa-solid fa-seedling text-sky-400 text-xl group-hover:scale-110 transition"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-game text-xl font-bold text-white group-hover:text-sky-300 transition">1st Semester</h3>
+                                <p class="text-xs text-slate-400 mt-1 line-clamp-2">Greetings, Verb TO BE, Days, Months, Seasons & Info</p>
+                            </div>
+                        </button>
+
+                        <!-- 3rd Semester -->
+                        <button onclick="app.selectSemester(3)" class="group relative overflow-hidden glass-button p-4 rounded-2xl text-left border border-purple-500/20 hover:border-purple-400 transition flex flex-col justify-between h-36">
+                            <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-purple-500/10 rounded-full blur-xl group-hover:bg-purple-500/20 transition"></div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30">LEVEL 2</span>
+                                <i class="fa-solid fa-bolt text-purple-400 text-xl group-hover:scale-110 transition"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-game text-xl font-bold text-white group-hover:text-purple-300 transition">3rd Semester</h3>
+                                <p class="text-xs text-slate-400 mt-1 line-clamp-2">Present Continuous, House Parts, TO BE Variations</p>
+                            </div>
+                        </button>
+
+                        <!-- 5th Semester -->
+                        <button onclick="app.selectSemester(5)" class="group relative overflow-hidden glass-button p-4 rounded-2xl text-left border border-amber-500/20 hover:border-amber-400 transition flex flex-col justify-between h-36">
+                            <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition"></div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30">LEVEL 3</span>
+                                <i class="fa-solid fa-crown text-amber-400 text-xl group-hover:scale-110 transition"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-game text-xl font-bold text-white group-hover:text-amber-300 transition">5th Semester</h3>
+                                <p class="text-xs text-slate-400 mt-1 line-clamp-2">Present Perfect, Present Continuous, Verbs, Comparatives & Superlatives</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 text-center text-xs text-slate-400 border-t border-slate-800 pt-4 flex items-center justify-center space-x-4">
+                <span><i class="fa-solid fa-bullseye text-sky-400 mr-1"></i> Interactive Questions</span>
+                <span>•</span>
+                <span><i class="fa-solid fa-fire text-amber-400 mr-1"></i> Combo Multipliers</span>
+                <span>•</span>
+                <span><i class="fa-solid fa-file-arrow-down text-emerald-400 mr-1"></i> Instant Score Export</span>
+            </div>
+        </section>
+
+
+        <!-- ================= QUIZ EXAM SCREEN ================= -->
+        <section id="quizScreen" class="w-full max-w-3xl glass-card rounded-3xl p-5 sm:p-8 hidden relative overflow-hidden">
+            
+            <!-- Quiz HUD Header -->
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-700/60">
+                
+                <!-- Student Info & Semester Tag -->
+                <div class="flex items-center space-x-3">
+                    <div id="quizAvatarDisplay" class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-600 flex items-center justify-center text-xl shadow">
+                        🧙‍♂️
+                    </div>
+                    <div>
+                        <div id="quizStudentName" class="font-bold text-sm sm:text-base text-white line-clamp-1">Student</div>
+                        <span id="quizSemesterTag" class="text-xs px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-medium">1st Semester</span>
+                    </div>
+                </div>
+
+                <!-- Stats Bar (Score & Combo) -->
+                <div class="flex items-center space-x-4">
+                    <!-- Combo Flame -->
+                    <div id="comboBadge" class="hidden items-center space-x-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500/20 to-rose-500/20 border border-amber-500/40 text-amber-300 font-game text-sm animate-pulse">
+                        <i class="fa-solid fa-fire text-amber-400"></i>
+                        <span id="comboCount">x2 Combo!</span>
+                    </div>
+
+                    <!-- Live Score -->
+                    <div class="flex items-center space-x-2 bg-slate-900/80 px-3.5 py-1.5 rounded-xl border border-slate-700">
+                        <i class="fa-solid fa-star text-amber-400 text-sm"></i>
+                        <span id="currentScoreDisplay" class="font-game text-lg font-bold text-amber-300">0</span>
+                        <span class="text-xs text-slate-500">PTS</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="mb-6">
+                <div class="flex justify-between text-xs font-semibold text-slate-400 mb-1.5">
+                    <span id="questionCounter">Question 1 of 15</span>
+                    <span id="percentProgress">0% Completed</span>
+                </div>
+                <div class="w-full bg-slate-900/80 rounded-full h-3 p-0.5 border border-slate-800">
+                    <div id="progressBar" class="bg-gradient-to-r from-sky-400 via-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-300" style="width: 6.66%;"></div>
+                </div>
+            </div>
+
+            <!-- Question Card Area -->
+            <div id="questionContainer" class="space-y-6">
+                <!-- Dynamic Question Content Injected via JS -->
+            </div>
+
+            <!-- Feedback Modal Overlay / Inline Banner -->
+            <div id="feedbackBanner" class="hidden mt-6 p-4 rounded-2xl border transition-all duration-300">
+                <div class="flex items-start space-x-3">
+                    <div id="feedbackIcon" class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 mt-0.5">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <h4 id="feedbackTitle" class="font-game text-lg font-bold">Awesome! Correct Answer</h4>
+                        <p id="feedbackText" class="text-sm mt-1 opacity-90">Great job understanding this rule.</p>
+                    </div>
+                    <button id="nextBtn" onclick="app.nextQuestion()" class="px-5 py-2.5 rounded-xl font-game font-bold text-sm bg-white text-slate-900 hover:bg-slate-200 transition shadow-lg shrink-0">
+                        Continue <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ================= RESULTS & EXPORT SCREEN ================= -->
+        <section id="resultsScreen" class="w-full max-w-3xl glass-card rounded-3xl p-6 sm:p-10 hidden animate-pop">
+            
+            <div class="text-center mb-8">
+                <!-- Badge Icon -->
+                <div id="resultBadgeIcon" class="w-24 h-24 rounded-3xl bg-gradient-to-tr from-amber-400 to-amber-600 flex items-center justify-center text-5xl mx-auto shadow-2xl shadow-amber-500/30 mb-4 animate-float">
+                    🏆
+                </div>
+                <h2 class="font-game text-3xl sm:text-5xl font-bold text-white mb-2">QUEST COMPLETE!</h2>
+                <p id="motivationalMessage" class="text-sky-300 text-base sm:text-lg font-medium max-w-md mx-auto">
+                    Outstanding performance! You are an English superstar!
+                </p>
+            </div>
+
+            <!-- Score Summary Dashboard -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8">
+                <!-- Final Score -->
+                <div class="bg-slate-900/60 border border-slate-700/80 rounded-2xl p-4 text-center">
+                    <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Total Score</div>
+                    <div id="finalScore" class="font-game text-2xl sm:text-3xl font-bold text-amber-400">1500</div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">Points Earned</div>
+                </div>
+
+                <!-- Percentage -->
+                <div class="bg-slate-900/60 border border-slate-700/80 rounded-2xl p-4 text-center">
+                    <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Accuracy</div>
+                    <div id="finalPercentage" class="font-game text-2xl sm:text-3xl font-bold text-sky-400">100%</div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">Grade Rating</div>
+                </div>
+
+                <!-- Correct -->
+                <div class="bg-slate-900/60 border border-slate-700/80 rounded-2xl p-4 text-center">
+                    <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Correct</div>
+                    <div id="finalCorrect" class="font-game text-2xl sm:text-3xl font-bold text-emerald-400">15 / 15</div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">Questions</div>
+                </div>
+
+                <!-- Incorrect -->
+                <div class="bg-slate-900/60 border border-slate-700/80 rounded-2xl p-4 text-center">
+                    <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Incorrect</div>
+                    <div id="finalIncorrect" class="font-game text-2xl sm:text-3xl font-bold text-rose-400">0</div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">Mistakes</div>
+                </div>
+            </div>
+
+            <!-- Student Certificate Details Preview -->
+            <div class="bg-slate-900/80 rounded-2xl p-5 border border-slate-700/70 mb-8 space-y-2 text-sm text-slate-300">
+                <div class="flex justify-between border-b border-slate-800 pb-2">
+                    <span class="text-slate-400"><i class="fa-solid fa-user mr-2 text-sky-400"></i>Student Name:</span>
+                    <span id="certStudentName" class="font-semibold text-white">John Doe</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-800 pb-2">
+                    <span class="text-slate-400"><i class="fa-solid fa-graduation-cap mr-2 text-purple-400"></i>Exam Level:</span>
+                    <span id="certSemester" class="font-semibold text-white">1st Semester</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-800 pb-2">
+                    <span class="text-slate-400"><i class="fa-solid fa-calendar-day mr-2 text-emerald-400"></i>Completion Date:</span>
+                    <span id="certDate" class="font-semibold text-white">September 18, 2026</span>
+                </div>
+            </div>
+
+            <!-- Detailed Question Breakdown Toggle -->
+            <div class="mb-8">
+                <button onclick="app.toggleReviewDetails()" class="w-full glass-button py-3 px-4 rounded-xl text-sm font-semibold text-slate-300 hover:text-white flex items-center justify-between">
+                    <span><i class="fa-solid fa-list-check mr-2 text-sky-400"></i> Review Full Exam Answers</span>
+                    <i id="reviewChevron" class="fa-solid fa-chevron-down transition-transform"></i>
+                </button>
+                
+                <div id="reviewListContainer" class="hidden mt-4 space-y-3 max-h-80 overflow-y-auto pr-1">
+                    <!-- Dynamic Answer Review Items -->
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <!-- Save / Export Report -->
+                <button onclick="app.exportResults()" class="flex-1 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 font-game font-bold text-white shadow-lg shadow-emerald-500/25 transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-file-arrow-down text-lg"></i>
+                    <span>Save Results Report</span>
+                </button>
+
+                <!-- Copy to Clipboard -->
+                <button onclick="app.copyResultsToClipboard()" class="py-3.5 px-4 rounded-2xl glass-button text-sky-300 hover:text-white font-game font-bold transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-copy"></i>
+                    <span class="hidden sm:inline">Copy Text</span>
+                </button>
+
+                <!-- Restart Quiz -->
+                <button onclick="app.restartQuiz()" class="py-3.5 px-4 rounded-2xl glass-button text-purple-300 hover:text-white font-game font-bold transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span>Retry</span>
+                </button>
+
+                <!-- Main Menu -->
+                <button onclick="app.showScreen('menu')" class="py-3.5 px-4 rounded-2xl glass-button text-slate-300 hover:text-white font-game font-bold transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Menu</span>
+                </button>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="w-full text-center py-4 text-xs text-slate-500 z-10 border-t border-slate-800/60 backdrop-blur-sm">
+        ENGLISH QUEST &copy; 2026 • Interactive Gamified Quiz for High School Students
+    </footer>
+
+    <!-- Custom Notification Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 border border-slate-700 text-white px-5 py-3 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none z-50 flex items-center space-x-3">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-xl"></i>
+        <span id="toastMessage" class="text-sm font-medium">Notification message</span>
+    </div>
+
+
+    <!-- ================= JAVASCRIPT APPLICATION CODE ================= -->
+    <script>
+        
+        // Dynamic Web Audio API Sound Synthesizer (Zero External Dependencies)
+        class AudioEngine {
+            constructor() {
+                this.enabled = true;
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) {
+                        this.ctx = new AudioContext();
+                    }
+                }
+            }
+
+            playCorrect() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.1); // E5
+                osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.2); // G5
+                osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.35); // C6
+
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+
+            playWrong() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.linearRampToValueAtTime(130, now + 0.25);
+
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.3);
+            }
+
+            playClick() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.05);
+
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.05);
+            }
+
+            playVictory() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const notes = [523.25, 659.25, 783.99, 1046.50, 880, 1046.50];
+                const times = [0, 0.12, 0.24, 0.36, 0.5, 0.65];
+
+                notes.forEach((freq, idx) => {
+                    const now = this.ctx.currentTime + times[idx];
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now);
+
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                });
+            }
+        }
+
+
+        // EXAM QUESTION DATABASE (15 Questions Per Semester)
+        const EXAM_DATABASE = {
+            1: [ // 1ST SEMESTER
+                {
+                    id: '1s1',
+                    topic: 'Days of the Week',
+                    type: 'mc',
+                    question: 'What day comes right after Wednesday?',
+                    options: ['Tuesday', 'Thursday', 'Friday', 'Saturday'],
+                    answer: 'Thursday',
+                    explanation: 'The order of days is Wednesday -> Thursday -> Friday.'
+                },
+                {
+                    id: '1s2',
+                    topic: 'Months',
+                    type: 'mc',
+                    question: 'Which month is the first month of the year?',
+                    options: ['December', 'March', 'January', 'August'],
+                    answer: 'January',
+                    explanation: 'January is month #1 of the calendar year.'
+                },
+                {
+                    id: '1s3',
+                    topic: 'Seasons',
+                    type: 'mc',
+                    question: 'In which season do trees shed leaves and the weather turns cool?',
+                    options: ['Summer', 'Autumn / Fall', 'Spring', 'Winter'],
+                    answer: 'Autumn / Fall',
+                    explanation: 'Autumn (Fall) is known for falling leaves and cooler temperatures.'
+                },
+                {
+                    id: '1s4',
+                    topic: 'Personal Information',
+                    type: 'mc',
+                    question: 'Select the correct response to: "How old are you?"',
+                    options: ['I am fine, thank you.', 'I am 15 years old.', 'I live in Mexico.', 'My name is Alex.'],
+                    answer: 'I am 15 years old.',
+                    explanation: '"How old are you?" asks about age.'
+                },
+                {
+                    id: '1s5',
+                    topic: 'Formal Greetings',
+                    type: 'mc',
+                    question: 'Which greeting is formal and suitable for a teacher in the morning?',
+                    options: ['What\'s up!', 'Good morning, Professor.', 'Hey buddy!', 'See ya later!'],
+                    answer: 'Good morning, Professor.',
+                    explanation: '"Good morning" is a polite and formal greeting.'
+                },
+                {
+                    id: '1s6',
+                    topic: 'Informal Greetings',
+                    type: 'mc',
+                    question: 'Which greeting is casual/informal to use with a friend?',
+                    options: ['Good evening, Sir.', 'Nice to meet you, Madam.', 'Hey! How\'s it going?', 'How do you do?'],
+                    answer: 'Hey! How\'s it going?',
+                    explanation: '"Hey! How\'s it going?" is informal among peers.'
+                },
+                {
+                    id: '1s7',
+                    topic: 'Classroom Expressions',
+                    type: 'mc',
+                    question: 'What should you say if you need to ask a question in class?',
+                    options: ['May I raise my hand?', 'Can I open the window?', 'Teacher, I have a question.', 'Be quiet please.'],
+                    answer: 'Teacher, I have a question.',
+                    explanation: 'Expressing "I have a question" politely signals your need for help.'
+                },
+                {
+                    id: '1s8',
+                    topic: 'Verb TO BE (Affirmative)',
+                    type: 'mc',
+                    question: 'Complete the sentence: "She _____ a very talented student."',
+                    options: ['am', 'is', 'are', 'be'],
+                    answer: 'is',
+                    explanation: 'Third person singular pronouns (He/She/It) take "is".'
+                },
+                {
+                    id: '1s9',
+                    topic: 'Verb TO BE (Affirmative)',
+                    type: 'mc',
+                    question: 'Complete the sentence: "They _____ ready for the English exam."',
+                    options: ['is', 'am', 'are', 'was'],
+                    answer: 'are',
+                    explanation: 'Plural subject pronouns (They/We/You) take "are".'
+                },
+                {
+                    id: '1s10',
+                    topic: 'Personal Information',
+                    type: 'mc',
+                    question: 'Complete: "Where are you from?" - "I _____ from Canada."',
+                    options: ['am', 'is', 'are', 'be'],
+                    answer: 'am',
+                    explanation: 'The pronoun "I" always pairs with "am" in present simple TO BE.'
+                },
+                {
+                    id: '1s11',
+                    topic: 'Days of the Week',
+                    type: 'mc',
+                    question: 'Which two days form the "Weekend"?',
+                    options: ['Monday & Tuesday', 'Thursday & Friday', 'Saturday & Sunday', 'Wednesday & Thursday'],
+                    answer: 'Saturday & Sunday',
+                    explanation: 'Saturday and Sunday are the weekend days.'
+                },
+                {
+                    id: '1s12',
+                    topic: 'Seasons',
+                    type: 'mc',
+                    question: 'Flowers bloom and trees grow new green leaves during _____',
+                    options: ['Winter', 'Spring', 'Autumn', 'Summer'],
+                    answer: 'Spring',
+                    explanation: 'Spring is the season of blossom and new growth.'
+                },
+                {
+                    id: '1s13',
+                    topic: 'Classroom Expressions',
+                    type: 'mc',
+                    question: 'If you didn\'t hear the teacher clearly, what do you say?',
+                    options: ['Open your book.', 'Can you repeat that, please?', 'Sit down, please.', 'Goodbye!'],
+                    answer: 'Can you repeat that, please?',
+                    explanation: 'Asking "Can you repeat that, please?" is polite and clear.'
+                },
+                {
+                    id: '1s14',
+                    topic: 'Verb TO BE (Affirmative)',
+                    type: 'mc',
+                    question: 'Which sentence is grammatically CORRECT?',
+                    options: ['We is happy today.', 'I is a high school student.', 'You are very smart.', 'He am my friend.'],
+                    answer: 'You are very smart.',
+                    explanation: '"You are" is correct grammar.'
+                },
+                {
+                    id: '1s15',
+                    topic: 'Months',
+                    type: 'mc',
+                    question: 'Which month comes right before November?',
+                    options: ['September', 'October', 'December', 'August'],
+                    answer: 'October',
+                    explanation: 'October is the 10th month, right before November (11th).'
+                }
+            ],
+
+            3: [ // 3RD SEMESTER
+                {
+                    id: '3s1',
+                    topic: 'Present Continuous',
+                    type: 'mc',
+                    question: 'Complete: "Listen! Maria _____ the guitar right now."',
+                    options: ['is playing', 'plays', 'are playing', 'play'],
+                    answer: 'is playing',
+                    explanation: 'Actions happening right now use Present Continuous: is + verb-ing.'
+                },
+                {
+                    id: '3s2',
+                    topic: 'Parts of the House',
+                    type: 'mc',
+                    question: 'Where do people usually cook meals and prepare food?',
+                    options: ['Bedroom', 'Bathroom', 'Kitchen', 'Garage'],
+                    answer: 'Kitchen',
+                    explanation: 'The kitchen is the room dedicated to cooking.'
+                },
+                {
+                    id: '3s3',
+                    topic: 'Verb TO BE (Negative)',
+                    type: 'mc',
+                    question: 'Choose the correct negative sentence:',
+                    options: ['He not is home.', 'He is not at home.', 'He am not at home.', 'He don\'t at home.'],
+                    answer: 'He is not at home.',
+                    explanation: 'Negative TO BE follows: Subject + is/are/am + not.'
+                },
+                {
+                    id: '3s4',
+                    topic: 'Verb TO BE (Questions)',
+                    type: 'mc',
+                    question: 'Turn into a question: "They are excited about the match."',
+                    options: ['Are they excited about the match?', 'They are excited?', 'Is they excited about the match?', 'Do they are excited?'],
+                    answer: 'Are they excited about the match?',
+                    explanation: 'For TO BE questions, invert the verb and subject: "Are they...?"'
+                },
+                {
+                    id: '3s5',
+                    topic: 'Present Continuous',
+                    type: 'mc',
+                    question: 'Spell the -ing form correctly for the verb "SWIM":',
+                    options: ['swimming', 'swimning', 'swiming', 'swimmed'],
+                    answer: 'swimming',
+                    explanation: 'Short vowel + single consonant doubles the final consonant: swim -> swimming.'
+                },
+                {
+                    id: '3s6',
+                    topic: 'Parts of the House',
+                    type: 'mc',
+                    question: 'Which room is mainly used for sleeping and relaxing?',
+                    options: ['Living Room', 'Dining Room', 'Bedroom', 'Attic'],
+                    answer: 'Bedroom',
+                    explanation: 'The bedroom contains the bed for sleep.'
+                },
+                {
+                    id: '3s7',
+                    topic: 'Days & Seasons Review',
+                    type: 'mc',
+                    question: 'Complete: "In Canada, snow falls during _____, which spans December to February."',
+                    options: ['Spring', 'Summer', 'Winter', 'Autumn'],
+                    answer: 'Winter',
+                    explanation: 'Winter brings snow from December through February in Canada.'
+                },
+                {
+                    id: '3s8',
+                    topic: 'Present Continuous (Negative)',
+                    type: 'mc',
+                    question: 'Complete: "We _____ watching TV at the moment; we are studying."',
+                    options: ['is not', 'are not', 'am not', 'do not'],
+                    answer: 'are not',
+                    explanation: '"We" takes "are not" (aren\'t) in Present Continuous.'
+                },
+                {
+                    id: '3s9',
+                    topic: 'Parts of the House',
+                    type: 'mc',
+                    question: 'Where do you park cars inside a residence?',
+                    options: ['Balcony', 'Garage', 'Garden', 'Hallway'],
+                    answer: 'Garage',
+                    explanation: 'The garage is designed for parking vehicles.'
+                },
+                {
+                    id: '3s10',
+                    topic: 'Verb TO BE (Questions)',
+                    type: 'mc',
+                    question: 'Choose the correct question form:',
+                    options: ['Where is my keys?', 'Where am my keys?', 'Where are my keys?', 'Where be my keys?'],
+                    answer: 'Where are my keys?',
+                    explanation: '"Keys" is plural, so it requires "are".'
+                },
+                {
+                    id: '3s11',
+                    topic: 'Present Continuous (Questions)',
+                    type: 'mc',
+                    question: 'Form a question: "What _____ you doing right now?"',
+                    options: ['is', 'are', 'am', 'do'],
+                    answer: 'are',
+                    explanation: 'Subject "you" takes "are" -> "What are you doing?"'
+                },
+                {
+                    id: '3s12',
+                    topic: 'Parts of the House',
+                    type: 'mc',
+                    question: 'Where would you find a sofa, coffee table, and television?',
+                    options: ['Bathroom', 'Living Room', 'Kitchen', 'Laundry Room'],
+                    answer: 'Living Room',
+                    explanation: 'The living room is designed for social gathering with sofas and TV.'
+                },
+                {
+                    id: '3s13',
+                    topic: 'Present Continuous',
+                    type: 'mc',
+                    question: 'Identify the sentence in Present Continuous tense:',
+                    options: ['She plays soccer every Sunday.', 'She is playing soccer now.', 'She played soccer yesterday.', 'She will play soccer.'],
+                    answer: 'She is playing soccer now.',
+                    explanation: 'Present continuous format is [TO BE + verb-ing].'
+                },
+                {
+                    id: '3s14',
+                    topic: 'Verb TO BE (Affirmative/Negative)',
+                    type: 'mc',
+                    question: 'Complete: "I _____ hungry, but I _____ tired."',
+                    options: ['am / am not', 'is / is not', 'are / are not', 'am / is not'],
+                    answer: 'am / am not',
+                    explanation: 'Subject "I" pairs with "am" and "am not".'
+                },
+                {
+                    id: '3s15',
+                    topic: 'Months & Seasons',
+                    type: 'mc',
+                    question: 'July and August are typically the hottest months of _____',
+                    options: ['Winter', 'Spring', 'Summer', 'Autumn'],
+                    answer: 'Summer',
+                    explanation: 'July and August fall in the summer season.'
+                }
+            ],
+
+            5: [ // 5TH SEMESTER
+                {
+                    id: '5s1',
+                    topic: 'Present Perfect',
+                    type: 'mc',
+                    question: 'Complete: "I _____ already _____ my English homework."',
+                    options: ['have / finished', 'has / finished', 'have / finish', 'had / finishing'],
+                    answer: 'have / finished',
+                    explanation: 'Present Perfect formula: Have/Has + Past Participle (finished).'
+                },
+                {
+                    id: '5s2',
+                    topic: 'Comparatives',
+                    type: 'mc',
+                    question: 'Complete: "An airplane is _____ than a bicycle."',
+                    options: ['fastest', 'more fast', 'faster', 'as fast'],
+                    answer: 'faster',
+                    explanation: 'One-syllable adjectives add "-er" for comparative degree.'
+                },
+                {
+                    id: '5s3',
+                    topic: 'Superlatives',
+                    type: 'mc',
+                    question: 'Complete: "Mount Everest is the _____ mountain in the world."',
+                    options: ['higher', 'highest', 'more high', 'most high'],
+                    answer: 'highest',
+                    explanation: 'Superlatives use "the" + adjective + "-est".'
+                },
+                {
+                    id: '5s4',
+                    topic: 'Regular and Irregular Verbs',
+                    type: 'mc',
+                    question: 'What is the past participle form of the verb "GO"?',
+                    options: ['goed', 'went', 'gone', 'going'],
+                    answer: 'gone',
+                    explanation: 'Base: go -> Past Simple: went -> Past Participle: gone.'
+                },
+                {
+                    id: '5s5',
+                    topic: 'Numbers',
+                    type: 'mc',
+                    question: 'How do you write the number 1,500 in English words?',
+                    options: ['Fifteen tens', 'One thousand five hundred', 'One million five hundred', 'Fifteen hundred thousand'],
+                    answer: 'One thousand five hundred',
+                    explanation: '1,500 = One thousand five hundred.'
+                },
+                {
+                    id: '5s6',
+                    topic: 'Verb TO BE',
+                    type: 'mc',
+                    question: 'Complete the sentence with TO BE: "She _____ a student at our high school."',
+                    options: ['am', 'is', 'are', 'be'],
+                    answer: 'is',
+                    explanation: 'Subject pronoun "She" pairs with "is".'
+                },
+                {
+                    id: '5s7',
+                    topic: 'Comparatives (Irregular)',
+                    type: 'mc',
+                    question: 'What is the comparative form of the adjective "GOOD"?',
+                    options: ['gooder', 'more good', 'better', 'best'],
+                    answer: 'better',
+                    explanation: '"Good" is irregular: good -> better -> best.'
+                },
+                {
+                    id: '5s8',
+                    topic: 'Irregular Verbs',
+                    type: 'mc',
+                    question: 'Which of the following is an IRREGULAR past participle?',
+                    options: ['walked', 'played', 'written', 'studied'],
+                    answer: 'written',
+                    explanation: '"Written" comes from write -> wrote -> written (irregular).'
+                },
+                {
+                    id: '5s9',
+                    topic: 'Seasons',
+                    type: 'mc',
+                    question: 'Which season comes right after Winter when flowers start to bloom?',
+                    options: ['Summer', 'Spring', 'Autumn', 'Fall'],
+                    answer: 'Spring',
+                    explanation: 'Spring follows Winter.'
+                },
+                {
+                    id: '5s10',
+                    topic: 'Superlatives (Long Adjectives)',
+                    type: 'mc',
+                    question: 'Complete: "This is the _____ game I have ever played!"',
+                    options: ['most exciting', 'excitingest', 'more exciting', 'much exciting'],
+                    answer: 'most exciting',
+                    explanation: 'Long adjectives (3+ syllables) use "the most" for superlatives.'
+                },
+                {
+                    id: '5s11',
+                    topic: 'Present Perfect (Ever / Never)',
+                    type: 'mc',
+                    question: 'Complete: "Have you _____ visited Mexico City?"',
+                    options: ['never', 'ever', 'yet', 'already'],
+                    answer: 'ever',
+                    explanation: '"Ever" is commonly used in Present Perfect questions asking about life experience.'
+                },
+                {
+                    id: '5s12',
+                    topic: 'Numbers',
+                    type: 'mc',
+                    question: 'What is the number "twenty-five" written in digits?',
+                    options: ['52', '25', '15', '205'],
+                    answer: '25',
+                    explanation: 'Twenty-five is written in digits as 25.'
+                },
+                {
+                    id: '5s13',
+                    topic: 'Verb TO BE Synthesis',
+                    type: 'mc',
+                    question: 'Complete: "They _____ been best friends for five years."',
+                    options: ['are', 'were', 'have', 'has'],
+                    answer: 'have',
+                    explanation: 'Present Perfect structure: They + have + been (Past participle of TO BE).'
+                },
+                {
+                    id: '5s14',
+                    topic: 'Comparatives (Irregular)',
+                    type: 'mc',
+                    question: 'Complete: "Today\'s storm is _____ than yesterday\'s rain."',
+                    options: ['badder', 'worse', 'worst', 'more bad'],
+                    answer: 'worse',
+                    explanation: 'The comparative of "bad" is "worse".'
+                },
+                {
+                    id: '5s15',
+                    topic: 'Present Continuous',
+                    type: 'mc',
+                    question: 'Complete: "Look! The children _____ in the garden right now."',
+                    options: ['are playing', 'played', 'plays', 'play'],
+                    answer: 'are playing',
+                    explanation: 'Actions happening right now use Present Continuous: are + verb-ing.'
+                },
+                {
+                    id: '5s16',
+                    topic: 'Days of the Week',
+                    type: 'mc',
+                    question: 'Which day comes right after Friday?',
+                    options: ['Thursday', 'Saturday', 'Sunday', 'Monday'],
+                    answer: 'Saturday',
+                    explanation: 'Saturday comes directly after Friday.'
+                },
+                {
+                    id: '5s17',
+                    topic: 'Present Continuous',
+                    type: 'mc',
+                    question: 'Complete: "Listen! Someone _____ at the front door."',
+                    options: ['knocks', 'is knocking', 'knocked', 'knock'],
+                    answer: 'is knocking',
+                    explanation: 'Actions happening at the moment of speaking use Present Continuous: is + verb-ing.'
+                },
+                {
+                    id: '5s18',
+                    topic: 'Months of the Year',
+                    type: 'mc',
+                    question: 'Which month comes right after March?',
+                    options: ['February', 'May', 'April', 'June'],
+                    answer: 'April',
+                    explanation: 'April is the 4th month, following March (3rd).'
+                },
+                {
+                    id: '5s19',
+                    topic: 'Days of the Week',
+                    type: 'mc',
+                    question: 'What day comes right before Sunday?',
+                    options: ['Friday', 'Saturday', 'Monday', 'Thursday'],
+                    answer: 'Saturday',
+                    explanation: 'Saturday is the day before Sunday.'
+                },
+                {
+                    id: '5s20',
+                    topic: 'Months of the Year',
+                    type: 'mc',
+                    question: 'Which is the last month of the year?',
+                    options: ['November', 'January', 'December', 'October'],
+                    answer: 'December',
+                    explanation: 'December is the 12th and final month of the year.'
+                },
+                {
+                    id: '5s21',
+                    topic: 'Days of the Week',
+                    type: 'mc',
+                    question: 'Which day comes between Monday and Wednesday?',
+                    options: ['Sunday', 'Tuesday', 'Thursday', 'Friday'],
+                    answer: 'Tuesday',
+                    explanation: 'Tuesday is between Monday and Wednesday.'
+                },
+                {
+                    id: '5s22',
+                    topic: 'Months of the Year',
+                    type: 'mc',
+                    question: 'Which month comes right after April?',
+                    options: ['March', 'June', 'May', 'July'],
+                    answer: 'May',
+                    explanation: 'May is the 5th month of the year, after April.'
+                },
+                {
+                    id: '5s23',
+                    topic: 'Present Continuous',
+                    type: 'mc',
+                    question: 'Complete: "We _____ for our English exam right now."',
+                    options: ['are studying', 'studies', 'studied', 'study'],
+                    answer: 'are studying',
+                    explanation: 'Present Continuous uses TO BE (are) + verb with -ing for actions happening now.'
+                },
+                {
+                    id: '5s24',
+                    topic: 'Months of the Year',
+                    type: 'mc',
+                    question: 'Which month comes right before June?',
+                    options: ['May', 'July', 'April', 'August'],
+                    answer: 'May',
+                    explanation: 'May is the 5th month, preceding June.'
+                },
+                {
+                    id: '5s25',
+                    topic: 'Days of the Week',
+                    type: 'mc',
+                    question: 'Which day is the first day of the typical school week?',
+                    options: ['Sunday', 'Monday', 'Wednesday', 'Friday'],
+                    answer: 'Monday',
+                    explanation: 'Monday is the start of the typical school and work week.'
+                }
+            ]
+        };
+
+        const AVATARS = ['🧙‍♂️', '🥷', '👩‍🚀', '🤖', '🦸‍♀️', '🦁', '🦊', '🦉', '🐉', '👑'];
+
+
+        class QuestApp {
+            constructor() {
+                this.audio = new AudioEngine();
+                this.studentName = '';
+                this.avatar = '🧙‍♂️';
+                this.selectedSemester = 1;
+                this.questions = [];
+                this.currentIndex = 0;
+                this.score = 0;
+                this.streak = 0;
+                this.userAnswers = [];
+                this.hasAnsweredCurrent = false;
+
+                this.initUI();
+            }
+
+            initUI() {
+                this.renderAvatars();
+                // Check local storage for previous student name
+                const savedName = localStorage.getItem('eq_student_name');
+                if (savedName) {
+                    document.getElementById('studentNameInput').value = savedName;
+                }
+            }
+
+            renderAvatars() {
+                const container = document.getElementById('avatarSelector');
+                container.innerHTML = AVATARS.map((emoji, idx) => `
+                    <button type="button" onclick="app.setAvatar('${emoji}', this)" 
+                            class="avatar-btn p-2 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-sky-400 text-2xl sm:text-3xl transition flex items-center justify-center aspect-square ${idx === 0 ? 'ring-2 ring-sky-400 bg-sky-500/20' : ''}">
+                        ${emoji}
+                    </button>
+                `).join('');
+            }
+
+            setAvatar(emoji, btnEl) {
+                this.audio.playClick();
+                this.avatar = emoji;
+                document.querySelectorAll('.avatar-btn').forEach(btn => {
+                    btn.classList.remove('ring-2', 'ring-sky-400', 'bg-sky-500/20');
+                });
+                btnEl.classList.add('ring-2', 'ring-sky-400', 'bg-sky-500/20');
+            }
+
+            toggleSound() {
+                this.audio.enabled = !this.audio.enabled;
+                const icon = document.getElementById('soundIcon');
+                const label = document.getElementById('soundLabel');
+                if (this.audio.enabled) {
+                    icon.className = 'fa-solid fa-volume-high text-sky-400';
+                    label.textContent = 'Audio: On';
+                    this.audio.playClick();
+                } else {
+                    icon.className = 'fa-solid fa-volume-xmark text-slate-500';
+                    label.textContent = 'Audio: Off';
+                }
+            }
+
+            showScreen(screenId) {
+                this.audio.playClick();
+                ['menuScreen', 'quizScreen', 'resultsScreen'].forEach(id => {
+                    document.getElementById(id).classList.add('hidden');
+                });
+
+                if (screenId === 'menu') {
+                    document.getElementById('menuScreen').classList.remove('hidden');
+                } else if (screenId === 'quiz') {
+                    document.getElementById('quizScreen').classList.remove('hidden');
+                } else if (screenId === 'results') {
+                    document.getElementById('resultsScreen').classList.remove('hidden');
+                }
+            }
+
+            selectSemester(semesterNum) {
+                const nameInput = document.getElementById('studentNameInput').value.trim();
+                const errorEl = document.getElementById('nameError');
+
+                if (!nameInput) {
+                    errorEl.classList.remove('hidden');
+                    this.audio.playWrong();
+                    document.getElementById('studentNameInput').focus();
+                    return;
+                }
+                errorEl.classList.add('hidden');
+
+                this.studentName = nameInput;
+                localStorage.setItem('eq_student_name', nameInput);
+                this.selectedSemester = semesterNum;
+
+                this.startQuiz();
+            }
+
+            startQuiz() {
+                this.audio.playClick();
+                // Load questions for selected semester
+                const rawQuestions = EXAM_DATABASE[this.selectedSemester] || EXAM_DATABASE[1];
+                // Shuffle copy of questions
+                this.questions = [...rawQuestions].sort(() => Math.random() - 0.5);
+
+                this.currentIndex = 0;
+                this.score = 0;
+                this.streak = 0;
+                this.userAnswers = [];
+                this.hasAnsweredCurrent = false;
+
+                // Update HUD
+                document.getElementById('quizStudentName').textContent = this.studentName;
+                document.getElementById('quizAvatarDisplay').textContent = this.avatar;
+                
+                const semText = this.selectedSemester === 1 ? '1st Semester' : (this.selectedSemester === 3 ? '3rd Semester' : '5th Semester');
+                document.getElementById('quizSemesterTag').textContent = semText;
+
+                this.showScreen('quiz');
+                this.renderQuestion();
+            }
+
+
+            renderQuestion() {
+                this.hasAnsweredCurrent = false;
+                document.getElementById('feedbackBanner').classList.add('hidden');
+
+                const q = this.questions[this.currentIndex];
+                const total = this.questions.length;
+                const progressPct = Math.round(((this.currentIndex) / total) * 100);
+
+                // Update Progress UI
+                document.getElementById('questionCounter').textContent = `Question ${this.currentIndex + 1} of ${total}`;
+                document.getElementById('percentProgress').textContent = `${progressPct}% Completed`;
+                document.getElementById('progressBar').style.width = `${((this.currentIndex + 1) / total) * 100}%`;
+                document.getElementById('currentScoreDisplay').textContent = this.score;
+
+                // Combo Badge
+                const comboBadge = document.getElementById('comboBadge');
+                if (this.streak >= 2) {
+                    comboBadge.classList.remove('hidden');
+                    comboBadge.classList.add('flex');
+                    document.getElementById('comboCount').textContent = `x${this.streak} Combo! 🔥`;
+                } else {
+                    comboBadge.classList.add('hidden');
+                    comboBadge.classList.remove('flex');
+                }
+
+                // Render Question Content
+                const container = document.getElementById('questionContainer');
+                
+                // Shuffle options for choice question
+                const shuffledOptions = [...q.options].sort(() => Math.random() - 0.5);
+
+                container.innerHTML = `
+                    <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-700/80 shadow-lg">
+                        <div class="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-sky-400 mb-2">
+                            <span class="px-2.5 py-1 rounded-lg bg-sky-500/10 border border-sky-500/20">${q.topic}</span>
+                        </div>
+                        <h3 class="font-game text-xl sm:text-2xl text-white font-semibold leading-relaxed">
+                            ${q.question}
+                        </h3>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5" id="optionsGrid">
+                        ${shuffledOptions.map((option, idx) => {
+                            const letters = ['A', 'B', 'C', 'D'];
+                            return `
+                                <button onclick="app.checkAnswer('${option.replace(/'/g, "\\'")}', this)" 
+                                        class="option-btn group relative glass-button p-4 rounded-2xl text-left border border-slate-700/80 hover:border-sky-400/80 transition flex items-center space-x-3.5">
+                                    <span class="w-9 h-9 rounded-xl bg-slate-800 border border-slate-600 flex items-center justify-center font-game font-bold text-sky-300 group-hover:border-sky-400 group-hover:bg-sky-500/20 transition shrink-0">
+                                        ${letters[idx] || (idx + 1)}
+                                    </span>
+                                    <span class="font-medium text-slate-200 group-hover:text-white text-base leading-snug">
+                                        ${option}
+                                    </span>
+                                </button>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+
+            checkAnswer(selectedOption, btnEl) {
+                if (this.hasAnsweredCurrent) return;
+                this.hasAnsweredCurrent = true;
+
+                const q = this.questions[this.currentIndex];
+                const isCorrect = selectedOption === q.answer;
+
+                // Lock all options
+                const allButtons = document.querySelectorAll('.option-btn');
+                allButtons.forEach(btn => {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-75', 'cursor-not-allowed');
+                });
+
+                if (isCorrect) {
+                    this.streak++;
+                    const pointsGained = 100 + (this.streak > 1 ? (this.streak - 1) * 20 : 0);
+                    this.score += pointsGained;
+
+                    btnEl.classList.remove('border-slate-700/80', 'glass-button');
+                    btnEl.classList.add('bg-emerald-500/20', 'border-emerald-500', 'text-emerald-200');
+                    btnEl.querySelector('span').classList.add('bg-emerald-500', 'text-white', 'border-emerald-400');
+
+                    this.audio.playCorrect();
+                    this.triggerMiniConfetti();
+                    this.showFeedback(true, `+${pointsGained} PTS! ${q.explanation}`);
+                } else {
+                    this.streak = 0;
+                    btnEl.classList.remove('border-slate-700/80', 'glass-button');
+                    btnEl.classList.add('bg-rose-500/20', 'border-rose-500', 'animate-shake');
+
+                    // Highlight correct answer
+                    allButtons.forEach(btn => {
+                        if (btn.textContent.includes(q.answer)) {
+                            btn.classList.add('bg-emerald-500/20', 'border-emerald-500/60');
+                        }
+                    });
+
+                    this.audio.playWrong();
+                    this.showFeedback(false, `Correct answer: "${q.answer}". ${q.explanation}`);
+                }
+
+                // Save result record
+                this.userAnswers.push({
+                    question: q.question,
+                    topic: q.topic,
+                    userAnswer: selectedOption,
+                    correctAnswer: q.answer,
+                    isCorrect: isCorrect,
+                    explanation: q.explanation
+                });
+
+                document.getElementById('currentScoreDisplay').textContent = this.score;
+            }
+
+            showFeedback(isCorrect, message) {
+                const banner = document.getElementById('feedbackBanner');
+                const icon = document.getElementById('feedbackIcon');
+                const title = document.getElementById('feedbackTitle');
+                const text = document.getElementById('feedbackText');
+
+                banner.classList.remove('hidden', 'bg-emerald-950/60', 'border-emerald-500/40', 'bg-rose-950/60', 'border-rose-500/40');
+
+                if (isCorrect) {
+                    banner.classList.add('bg-emerald-950/60', 'border-emerald-500/40', 'text-emerald-200');
+                    icon.className = 'w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl shrink-0 mt-0.5 border border-emerald-500/30';
+                    icon.innerHTML = '<i class="fa-solid fa-check"></i>';
+                    title.textContent = this.streak > 1 ? `Awesome! ${this.streak}x Combo Streak!` : 'Splendid! Correct Answer';
+                    title.className = 'font-game text-lg font-bold text-emerald-300';
+                } else {
+                    banner.classList.add('bg-rose-950/60', 'border-rose-500/40', 'text-rose-200');
+                    icon.className = 'w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-xl shrink-0 mt-0.5 border border-rose-500/30';
+                    icon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                    title.textContent = 'Keep Learning!';
+                    title.className = 'font-game text-lg font-bold text-rose-300';
+                }
+
+                text.textContent = message;
+                banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            nextQuestion() {
+                this.audio.playClick();
+                this.currentIndex++;
+                if (this.currentIndex < this.questions.length) {
+                    this.renderQuestion();
+                } else {
+                    this.finishQuiz();
+                }
+            }
+
+
+            finishQuiz() {
+                const totalQ = this.questions.length;
+                const correctCount = this.userAnswers.filter(a => a.isCorrect).length;
+                const incorrectCount = totalQ - correctCount;
+                const percentage = Math.round((correctCount / totalQ) * 100);
+
+                // Populate Results Screen
+                document.getElementById('finalScore').textContent = this.score;
+                document.getElementById('finalPercentage').textContent = `${percentage}%`;
+                document.getElementById('finalCorrect').textContent = `${correctCount} / ${totalQ}`;
+                document.getElementById('finalIncorrect').textContent = incorrectCount;
+
+                document.getElementById('certStudentName').textContent = this.studentName;
+                
+                const semText = this.selectedSemester === 1 ? '1st Semester' : (this.selectedSemester === 3 ? '3rd Semester' : '5th Semester');
+                document.getElementById('certSemester').textContent = semText;
+
+                const dateStr = new Date().toLocaleDateString('en-US', {
+                    year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+                document.getElementById('certDate').textContent = dateStr;
+
+                // Motivational Message & Badge
+                const badgeIcon = document.getElementById('resultBadgeIcon');
+                const messageEl = document.getElementById('motivationalMessage');
+
+                if (percentage >= 90) {
+                    badgeIcon.textContent = '🏆';
+                    badgeIcon.className = 'w-24 h-24 rounded-3xl bg-gradient-to-tr from-amber-400 to-amber-600 flex items-center justify-center text-5xl mx-auto shadow-2xl shadow-amber-500/30 mb-4 animate-float';
+                    messageEl.textContent = `Magnificent work, ${this.studentName}! You demonstrated complete mastery of the ${semText} material!`;
+                } else if (percentage >= 70) {
+                    badgeIcon.textContent = '🌟';
+                    badgeIcon.className = 'w-24 h-24 rounded-3xl bg-gradient-to-tr from-sky-400 to-indigo-600 flex items-center justify-center text-5xl mx-auto shadow-2xl shadow-sky-500/30 mb-4 animate-float';
+                    messageEl.textContent = `Great effort, ${this.studentName}! You have a solid command of the concepts. Keep practicing!`;
+                } else {
+                    badgeIcon.textContent = '📚';
+                    badgeIcon.className = 'w-24 h-24 rounded-3xl bg-gradient-to-tr from-purple-500 to-pink-600 flex items-center justify-center text-5xl mx-auto shadow-2xl shadow-purple-500/30 mb-4 animate-float';
+                    messageEl.textContent = `Good try, ${this.studentName}! Review your answers below and give it another shot to boost your score!`;
+                }
+
+                // Render Review Details
+                this.renderReviewList();
+
+                this.showScreen('results');
+                this.audio.playVictory();
+                this.triggerFullConfetti();
+            }
+
+            renderReviewList() {
+                const container = document.getElementById('reviewListContainer');
+                container.innerHTML = this.userAnswers.map((item, idx) => `
+                    <div class="bg-slate-900/90 p-4 rounded-xl border ${item.isCorrect ? 'border-emerald-500/30' : 'border-rose-500/30'} text-xs sm:text-sm">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="font-bold ${item.isCorrect ? 'text-emerald-400' : 'text-rose-400'} flex items-center">
+                                <i class="fa-solid ${item.isCorrect ? 'fa-circle-check mr-1.5' : 'fa-circle-xmark mr-1.5'}"></i>
+                                Question ${idx + 1} (${item.topic})
+                            </span>
+                            <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded ${item.isCorrect ? 'bg-emerald-500/10 text-emerald-300' : 'bg-rose-500/10 text-rose-300'}">
+                                ${item.isCorrect ? 'Correct' : 'Incorrect'}
+                            </span>
+                        </div>
+                        <p class="text-white font-medium mb-2">${item.question}</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300 bg-slate-950/50 p-2.5 rounded-lg border border-slate-800">
+                            <div><strong class="text-slate-400">Your Answer:</strong> <span class="${item.isCorrect ? 'text-emerald-300' : 'text-rose-300'}">${item.userAnswer}</span></div>
+                            <div><strong class="text-slate-400">Correct Answer:</strong> <span class="text-emerald-300">${item.correctAnswer}</span></div>
+                        </div>
+                        <p class="text-slate-400 text-xs mt-2 italic"><i class="fa-solid fa-lightbulb text-amber-400 mr-1"></i> ${item.explanation}</p>
+                    </div>
+                `).join('');
+            }
+
+            toggleReviewDetails() {
+                const container = document.getElementById('reviewListContainer');
+                const chevron = document.getElementById('reviewChevron');
+                container.classList.toggle('hidden');
+                chevron.classList.toggle('rotate-180');
+            }
+
+            restartQuiz() {
+                this.startQuiz();
+            }
+
+
+            exportResults() {
+                this.audio.playClick();
+                const totalQ = this.questions.length;
+                const correctCount = this.userAnswers.filter(a => a.isCorrect).length;
+                const percentage = Math.round((correctCount / totalQ) * 100);
+                const semText = this.selectedSemester === 1 ? '1st Semester' : (this.selectedSemester === 3 ? '3rd Semester' : '5th Semester');
+                const dateStr = new Date().toLocaleString();
+
+                let reportText = `==================================================\n`;
+                reportText += `       ENGLISH QUEST - EXAM RESULTS REPORT        \n`;
+                reportText += `==================================================\n\n`;
+                reportText += `Student Name : ${this.studentName}\n`;
+                reportText += `Semester Level: ${semText}\n`;
+                reportText += `Date & Time   : ${dateStr}\n`;
+                reportText += `Total Score   : ${this.score} PTS\n`;
+                reportText += `Accuracy Grade: ${percentage}%\n`;
+                reportText += `Correct Answers: ${correctCount} / ${totalQ}\n`;
+                reportText += `Incorrect     : ${totalQ - correctCount}\n\n`;
+                reportText += `--------------------------------------------------\n`;
+                reportText += `DETAILED ANSWER REVIEW:\n`;
+                reportText += `--------------------------------------------------\n`;
+
+                this.userAnswers.forEach((ans, i) => {
+                    reportText += `\n[Q${i + 1}] Topic: ${ans.topic}\n`;
+                    reportText += `Question: ${ans.question}\n`;
+                    reportText += `Student Answer: ${ans.userAnswer} [${ans.isCorrect ? 'CORRECT' : 'INCORRECT'}]\n`;
+                    reportText += `Correct Answer: ${ans.correctAnswer}\n`;
+                    reportText += `Explanation   : ${ans.explanation}\n`;
+                });
+
+                reportText += `\n==================================================\n`;
+                reportText += `Generated by ENGLISH QUEST Web Platform\n`;
+
+                // Create blob and trigger browser download
+                const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' });
+                const fileName = `EnglishQuest_Results_${this.studentName.replace(/\s+/g, '_')}_Sem${this.selectedSemester}.txt`;
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                this.showToast('Results report downloaded successfully!');
+            }
+
+            copyResultsToClipboard() {
+                this.audio.playClick();
+                const totalQ = this.questions.length;
+                const correctCount = this.userAnswers.filter(a => a.isCorrect).length;
+                const percentage = Math.round((correctCount / totalQ) * 100);
+                const semText = this.selectedSemester === 1 ? '1st Semester' : (this.selectedSemester === 3 ? '3rd Semester' : '5th Semester');
+                const dateStr = new Date().toLocaleDateString();
+
+                const copyText = `🎓 ENGLISH QUEST REPORT Card\nName: ${this.studentName}\nSemester: ${semText}\nDate: ${dateStr}\nScore: ${this.score} PTS | Accuracy: ${percentage}% (${correctCount}/${totalQ} Correct)`;
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(copyText).then(() => {
+                        this.showToast('Summary copied to clipboard!');
+                    }).catch(() => {
+                        this.fallbackCopyText(copyText);
+                    });
+                } else {
+                    this.fallbackCopyText(copyText);
+                }
+            }
+
+            fallbackCopyText(text) {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    this.showToast('Summary copied to clipboard!');
+                } catch (err) {
+                    this.showToast('Unable to auto-copy. Please export TXT file.');
+                }
+                document.body.removeChild(textArea);
+            }
+
+            showToast(msg) {
+                const toast = document.getElementById('toast');
+                document.getElementById('toastMessage').textContent = msg;
+                toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+                
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+                }, 3000);
+            }
+
+
+            triggerMiniConfetti() {
+                this.spawnParticles(20);
+            }
+
+            triggerFullConfetti() {
+                this.spawnParticles(100);
+            }
+
+            spawnParticles(count) {
+                const canvas = document.getElementById('confettiCanvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
+                const particles = [];
+                const colors = ['#38bdf8', '#a855f7', '#ec4899', '#10b981', '#f59e0b'];
+
+                for (let i = 0; i < count; i++) {
+                    particles.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height * 0.4,
+                        size: Math.random() * 8 + 4,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        vx: (Math.random() - 0.5) * 6,
+                        vy: Math.random() * 4 + 2,
+                        rotation: Math.random() * 360,
+                        vRot: (Math.random() - 0.5) * 10
+                    });
+                }
+
+                let frames = 0;
+                function render() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    particles.forEach(p => {
+                        ctx.save();
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate((p.rotation * Math.PI) / 180);
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                        ctx.restore();
+
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.rotation += p.vRot;
+                    });
+
+                    frames++;
+                    if (frames < 120) {
+                        requestAnimationFrame(render);
+                    } else {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    }
+                }
+                render();
+            }
+        }
+
+        // Initialize application instance on DOM load
+        let app;
+        window.addEventListener('DOMContentLoaded', () => {
+            app = new QuestApp();
+        });
+    </script>
+</body>
+</html>
